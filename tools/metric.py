@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 from cmath import isnan
+=======
+>>>>>>> 9696916690c69616ae0f1825a8817e27a632a22e
 from operator import index
 from typing import List
 from torchvision.utils import draw_bounding_boxes,make_grid,save_image
@@ -29,7 +32,10 @@ def stage1_val(boxes:List[torch.Tensor],preds:List[torch.Tensor],imgs:torch.Tens
     return proposal_targetboxes_miou(preds,boxes)
 
 def proposal_stage2_metric(proposal: List[torch.Tensor],pred_masks,pred_clses, target_boxes: List[torch.Tensor], target_masks: List[torch.Tensor], target_cls: List[torch.Tensor]):
+<<<<<<< HEAD
     '每张图片boxes平均iou,正例类别标签中正确的占比,mask 平均iou'
+=======
+>>>>>>> 9696916690c69616ae0f1825a8817e27a632a22e
     max_boxes_ious = torch.zeros(0,device='cuda')
     max_masks_ious = torch.zeros(0,device='cuda')
     all_cls = torch.zeros(0,device='cuda')
@@ -41,6 +47,7 @@ def proposal_stage2_metric(proposal: List[torch.Tensor],pred_masks,pred_clses, t
         masks = masks[index]
         cls = cls[index]
         max_masks_iou = jaccard(pred_mask,masks)
+<<<<<<< HEAD
         cls:torch.Tensor = (pred_cls[pred_cls.bool()]==cls[cls.bool()]).sum()/len(cls[cls.bool()])
         
         if cls.isnan().any() or max_masks_iou.isnan().any() or max_iou.isnan().any():
@@ -49,6 +56,12 @@ def proposal_stage2_metric(proposal: List[torch.Tensor],pred_masks,pred_clses, t
             max_masks_ious = torch.cat([max_masks_ious,torch.tensor([max_masks_iou],device=max_boxes_ious.device)],dim=0)
             max_boxes_ious = torch.cat([max_boxes_ious,max_iou],dim=0)
             all_cls = torch.cat([all_cls,torch.tensor([cls.item()],device=all_cls.device)],dim=0)
+=======
+        max_masks_ious = torch.cat([max_masks_ious,torch.tensor([max_masks_iou],device=max_boxes_ious.device)],dim=0)
+        max_boxes_ious = torch.cat([max_boxes_ious,max_iou],dim=0)
+        cls = (pred_cls[pred_cls.bool()]==cls[cls.bool()]).sum()/len(cls[cls.bool()])
+        all_cls = torch.cat([all_cls,torch.tensor([cls.item()],device=all_cls.device)],dim=0)
+>>>>>>> 9696916690c69616ae0f1825a8817e27a632a22e
     return max_boxes_ious.mean().item(),max_masks_ious.mean().item(),all_cls.mean().item()
 
 def jaccard(masks:torch.Tensor,target_masks:torch.Tensor):

@@ -40,6 +40,7 @@ test_loader = DataLoader(test_set,4,shuffle=False,num_workers=4,collate_fn=colle
 
 ######## anchors ###############
 anchors = generate_anchors(anchors_wh,256,4).cuda()
+<<<<<<< HEAD
 net = MaskRCNN(anchors,stage1_mode=False,stage2_train_mode=True,rpn_pos_threshold=arg.rpn_pos_thresh,stage2_sample_ratio=arg.stage2_sample_ratio,post_rpn_thresh=arg.post_rpn_pos_thresh,post_detection_iou_thresh=arg.post_detection_nms_thresh,post_detection_score_thresh=arg.post_detection_score_thresh).cuda()
 net.load_state_dict(torch.load('model_parameters/maskrcnn.pt'))
 optimizer = AdamW(net.parameters(),lr=arg.lr,weight_decay=arg.weight_decay)
@@ -50,6 +51,19 @@ lr_s = lr_scheduler.MultiStepLR(optimizer,arg.multi_steps,0.5)
 for parameters in net.backbone.parameters():
     parameters.requires_grad = False
 net.rpn.requires_grad_(False)
+=======
+net = arg.model(anchors,stage1_mode=arg.stage1_mode,stage2_train_mode=arg.stage2_train_mode,rpn_pos_threshold=arg.rpn_pos_thresh,stage2_sample_ratio=arg.stage2_sample_ratio,post_rpn_thresh=arg.post_rpn_pos_thresh,post_detection_iou_thresh=arg.post_detection_nms_thresh,post_detection_score_thresh=arg.post_detection_score_thresh).cuda()
+net.load_state_dict(torch.load(arg.load_model_para))
+optimizer = AdamW(net.parameters(),lr=arg.lr,weight_decay=arg.weight_decay)
+lr_s = lr_scheduler.MultiStepLR(optimizer,arg.multi_steps,0.5)
+net.box_align.register_forward_hook(stage1_boxes_hook_for_val)
+
+########### fixing the middle layer gradient ####################
+if not arg.stage1_mode:
+    for parameters in net.backbone.parameters():
+        parameters.requires_grad = False
+    net.rpn.requires_grad_(False)
+>>>>>>> 9696916690c69616ae0f1825a8817e27a632a22e
 
 for _ in range(arg.epoch):
     bar = tqdm(train_loader,colour='CYAN')
@@ -63,6 +77,7 @@ for _ in range(arg.epoch):
         cls = [_.cuda() for _ in cls]
         loss = net(imgs,boxes,masks,cls)
         optimizer.zero_grad()
+<<<<<<< HEAD
         #loss['rpn_loss'].backward()
         if loss['detection_loss'] is not None:
             loss['detection_loss'].backward()
@@ -71,6 +86,17 @@ for _ in range(arg.epoch):
             if not loss['detection_loss'].isnan().any():
                 losses.append(loss['detection_loss'])
         bar.set_description(f"stage2 train loss:{loss['detection_loss'].item()}")
+=======
+        federal_loss=loss['detection_loss']+loss['rpn_loss']
+        #loss['rpn_loss'].backward()
+        if federal_loss is not None:
+            federal_loss.backward()
+            optimizer.step()
+            lr_s.step()
+            if not federal_loss.isnan().any():
+                losses.append(federal_loss)
+        bar.set_description(f"stage2 train loss:{federal_loss.item()}")
+>>>>>>> 9696916690c69616ae0f1825a8817e27a632a22e
     write.add_scalar('train loss', torch.tensor(losses).mean().item(), _)
     torch.save(net.state_dict(),arg.model_para)
     torch.cuda.empty_cache()
