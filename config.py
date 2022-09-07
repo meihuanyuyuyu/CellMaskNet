@@ -34,11 +34,6 @@ class Config2(Config1):
     stage1_mode = False
     stage2_train_mode = True
 
-<<<<<<< HEAD
-
-    
-arg = Config2()
-=======
 class Config3(Config2):
     tensorboard_dir = 'exp_data/MaskRCNNStage3'
     model_para = 'model_parameters/maskrcnn_stage3.pt'
@@ -50,4 +45,3 @@ class Config3(Config2):
 
 
 arg = Config3()
->>>>>>> 9696916690c69616ae0f1825a8817e27a632a22e
