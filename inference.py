@@ -33,6 +33,7 @@ for i,img in enumerate(imgs):
     save_image(pic,f'figures/msakrcnn_s1_inference/{i}.png')
     
     
+<<<<<<< HEAD
 import torch
 import numpy as np
 from torchvision.utils import save_image,draw_bounding_boxes
@@ -68,3 +69,5 @@ for i,img in enumerate(imgs):
     save_image(pic,f'figures/msakrcnn_s1_inference/{i}.png')
     
     
+=======
+>>>>>>> 9696916690c69616ae0f1825a8817e27a632a22e
