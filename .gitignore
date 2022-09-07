@@ -1,0 +1,6 @@
+*.pt
+__pycache__
+project_conic/*
+exp_data/*
+*.out
+*.png
