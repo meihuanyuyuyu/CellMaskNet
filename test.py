@@ -13,14 +13,12 @@ def stage1_boxes_hook_for_val(moudle,input,output):
     stage1_rois = input[1]
 
 
-
 idxs = [1819,210,87,29,28,26,94]
 stage1_rois = None
 
 anchors = generate_anchors(anchors_wh,256,4).cuda()
 net = MaskRCNN(anchors,stage1_mode=False,stage2_train_mode=True,rpn_pos_threshold=0.7,post_rpn_thresh=0.7).cuda()
 net.load_state_dict(torch.load('model_parameters/maskrcnn.pt'))
-
 
 
 net.box_align.register_forward_hook(stage1_boxes_hook_for_val)
