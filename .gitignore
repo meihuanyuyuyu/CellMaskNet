@@ -4,3 +4,4 @@ project_conic/*
 exp_data/*
 *.out
 *.png
+*.txt
