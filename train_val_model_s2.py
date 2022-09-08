@@ -36,7 +36,7 @@ test_indexes=indexes['test']
 train_set = Subset(data,train_indexes)
 test_set = Subset(data,test_indexes)
 train_loader = DataLoader(train_set,2,True,num_workers=4,collate_fn=collect_fn)
-test_loader = DataLoader(test_set,4,shuffle=False,num_workers=4,collate_fn=collect_fn)
+test_loader = DataLoader(test_set,2,shuffle=False,num_workers=4,collate_fn=collect_fn)
 
 ######## anchors ###############
 anchors = generate_anchors(anchors_wh,256,4).cuda()
@@ -64,14 +64,17 @@ for _ in range(arg.epoch):
         cls = [_.cuda() for _ in cls]
         loss = net(imgs,boxes,masks,cls)
         optimizer.zero_grad()
-        federal_loss=loss['detection_loss']+loss['rpn_loss']
-        #loss['rpn_loss'].backward()
-        if federal_loss is not None:
-            federal_loss.backward()
-            optimizer.step()
-            lr_s.step()
-            if not federal_loss.isnan().any():
-                losses.append(federal_loss)
+
+        if  loss['detection_loss'] is not None:
+            federal_loss=loss['detection_loss']+loss['rpn_loss']
+        else:
+            # stage1 predicts nothing
+            federal_loss=loss['rpn_loss']
+        federal_loss.backward()
+        optimizer.step()
+        lr_s.step()
+        if not federal_loss.isnan().any():
+            losses.append(federal_loss)
         bar.set_description(f"stage2 train loss:{federal_loss.item()}")
     write.add_scalar('train loss', torch.tensor(losses).mean().item(), _)
     torch.save(net.state_dict(),arg.model_para)
@@ -104,12 +107,13 @@ for _ in range(arg.epoch):
                 pic = rois2img(rois,out_cls,out_masks)
                 pic = color[pic].permute(0,3,1,2)  
                 target = color[labels[:,1]].permute(0,3,1,2)
+                target1 = torch.zeros_like(target)
                 target2 = torch.zeros_like(target)
                 # stage1 boxes predicted picture:
                 for _,(per_img,stage1_boxes,boxes) in enumerate(zip(target,stage1_rois,rois)):
-                    target[_]=draw_bounding_boxes((per_img*255).to(dtype=torch.uint8),stage1_boxes)
+                    target1[_]=draw_bounding_boxes((per_img*255).to(dtype=torch.uint8),stage1_boxes)
                     target2[_] = draw_bounding_boxes((per_img*255).to(dtype=torch.uint8),boxes)
-                pic =make_grid(torch.cat([(target/255).float(),(target2/255).float(),pic]),nrow=2,padding=4)
+                pic =make_grid(torch.cat([(target1/255).float(),(target2/255).float(),pic]),nrow=2,padding=4)
                 save_image(pic,os.path.join(arg.val_img_fp,f'{i}.png'))
             write.add_scalar('boxes miou', torch.tensor(boxes_ious).mean().item(), _)
             write.add_scalar('masks miou', torch.tensor(masks_ious).mean().item(), _)

@@ -1,24 +1,10 @@
-<<<<<<< HEAD
-from .maskrcnn import MaskRCNN, forward
-=======
 from .maskrcnn import MaskRCNN
->>>>>>> 9696916690c69616ae0f1825a8817e27a632a22e
 import torch.nn as nn
 import torch
 from typing import List
 from torchvision.ops import roi_align
 
 class AdaptiveFeaturePooling(nn.Module):
-<<<<<<< HEAD
-    def __init__(self,boxes:List[torch.tensor],mode:str='max') -> None:
-        super().__init__()
-        self.boxes = boxes
-        self.mode = mode
-
-    def forward(self,feature_maps:List[torch.tensor]):
-        for feature_map in feature_maps:
-            roi_align()
-=======
     def __init__(self,boxes:List[torch.tensor],output_size,mode:str='max',img_size:int=256) -> None:
         super().__init__()
         self.boxes = boxes
@@ -41,4 +27,3 @@ class CellMaskNet(MaskRCNN):
     def __init__(self, default_anchors: torch.Tensor, stage1_mode: bool, stage2_train_mode: bool, rpn_pos_threshold: float, backbone=..., stage2_sample_ratio=1.5, post_rpn_thresh=0.7, stage2_max_proposal=256, post_detection_score_thresh=0.5, post_detection_iou_thresh=0.2, detections_per_img=500, img_size=...) -> None:
         super().__init__(default_anchors, stage1_mode, stage2_train_mode, rpn_pos_threshold, backbone, stage2_sample_ratio, post_rpn_thresh, stage2_max_proposal, post_detection_score_thresh, post_detection_iou_thresh, detections_per_img, img_size)
         pass
->>>>>>> 9696916690c69616ae0f1825a8817e27a632a22e

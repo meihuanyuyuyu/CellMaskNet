@@ -42,6 +42,7 @@ def proposal_stage2_metric(proposal: List[torch.Tensor],pred_masks,pred_clses, t
         cls:torch.Tensor = (pred_cls[pred_cls.bool()]==cls[cls.bool()]).sum()/len(cls[cls.bool()])
         
         if cls.isnan().any() or max_iou.isnan().any():
+            print('predicted results are all negative!')
             continue
         else:
             max_masks_ious = torch.cat([max_masks_ious,torch.tensor([max_masks_iou],device=max_boxes_ious.device)],dim=0)
