@@ -171,10 +171,6 @@ def generate_detection_targets(batched_rois:List[Tensor],target_boxes:List[Tenso
         batched_masks.append(masks)
     return batched_cls,batched_reg,batched_masks
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 9696916690c69616ae0f1825a8817e27a632a22e
 @torch.no_grad()
 def box2grid(rois_boxes:Tensor,output_size=[28,28]):
     r'rois_boxes:(rois,4)xyxy, output_size:[h,w],return:rois,h,w,2'

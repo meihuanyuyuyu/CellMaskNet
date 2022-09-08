@@ -36,11 +36,7 @@ test_loader = DataLoader(test_set,2,shuffle=False,num_workers=4,collate_fn=colle
 
 ######## anchors ###############
 anchors = generate_anchors(anchors_wh,256,4).cuda()
-<<<<<<< HEAD
-net = arg.model(anchors,stage1_mode=True,rpn_pos_threshold=arg.rpn_pos_thresh).cuda()
-=======
 net = MaskRCNN(anchors,stage1_mode=True,rpn_pos_threshold=0.7).cuda()
->>>>>>> 9696916690c69616ae0f1825a8817e27a632a22e
 optimizer = AdamW(net.parameters(),lr=arg.lr,weight_decay=arg.weight_decay)
 lr_s = lr_scheduler.MultiStepLR(optimizer,arg.multi_steps,0.5)
 
