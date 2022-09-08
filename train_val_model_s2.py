@@ -64,19 +64,9 @@ for _ in range(arg.epoch):
         cls = [_.cuda() for _ in cls]
         loss = net(imgs,boxes,masks,cls)
         optimizer.zero_grad()
-<<<<<<< HEAD
-        federal_loss=loss['detection_loss']+loss['rpn_loss']
-        #loss['rpn_loss'].backward()
-        if federal_loss is not None:
-            federal_loss.backward()
-            optimizer.step()
-            lr_s.step()
-            if not federal_loss.isnan().any():
-                losses.append(federal_loss)
-=======
 
         if  loss['detection_loss'] is not None:
-            federal_loss=loss['detection_loss']+loss['rpn_loss']
+            federal_loss=1.2*loss['detection_loss']+loss['rpn_loss']
         else:
             # stage1 predicts nothing
             federal_loss=loss['rpn_loss']
@@ -85,10 +75,9 @@ for _ in range(arg.epoch):
         lr_s.step()
         if not federal_loss.isnan().any():
             losses.append(federal_loss)
->>>>>>> 83fea5c7a13ea4d7c6edd339fde5c9342a87132d
         bar.set_description(f"stage2 train loss:{federal_loss.item()}")
     write.add_scalar('train loss', torch.tensor(losses).mean().item(), _)
-    torch.save(net.state_dict(),arg.model_para)
+    torch.save(net.state_dict(),'model_parameters/maskrcnn_stage3.pt')
     torch.cuda.empty_cache()
     
     if _% 10 ==0:

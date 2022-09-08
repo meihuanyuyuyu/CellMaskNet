@@ -40,8 +40,10 @@ class Config3(Config2):
     load_model_para = 'model_parameters/maskrcnn_stage2.pt'
     val_img_fp = 'figures/maskrcnn_s3'
     rpn_pos_thresh= 0.6
+    post_rpn_pos_thresh = 0.7
     stage1_mode = True
     stage2_train_mode = True
+    stage2_sample_ratio = 3
 
 
 arg = Config3()

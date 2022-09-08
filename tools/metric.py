@@ -26,6 +26,7 @@ def stage1_val(boxes:List[torch.Tensor],preds:List[torch.Tensor],imgs:torch.Tens
     save_image(pic,fp=fp)
     return proposal_targetboxes_miou(preds,boxes)
 
+@torch.no_grad()
 def proposal_stage2_metric(proposal: List[torch.Tensor],pred_masks,pred_clses, target_boxes: List[torch.Tensor], target_masks: List[torch.Tensor], target_cls: List[torch.Tensor]):
     '每张图片boxes平均iou,正例类别标签中正确的占比,mask 平均iou'
     max_boxes_ious = torch.zeros(0,device='cuda')
@@ -33,6 +34,7 @@ def proposal_stage2_metric(proposal: List[torch.Tensor],pred_masks,pred_clses, t
     all_cls = torch.zeros(0,device='cuda')
     for roi,pred_mask,pred_cls,boxes,masks,cls in zip(proposal,pred_masks,pred_clses,target_boxes,target_masks,target_cls):
         if len(boxes) ==0:
+            print('picuture has no objects!Skip caculating metric.')
             continue
         iou = box_iou(roi, boxes)
         max_iou,index = torch.max(iou, dim=-1)
@@ -42,7 +44,6 @@ def proposal_stage2_metric(proposal: List[torch.Tensor],pred_masks,pred_clses, t
         cls:torch.Tensor = (pred_cls[pred_cls.bool()]==cls[cls.bool()]).sum()/len(cls[cls.bool()])
         
         if cls.isnan().any() or max_iou.isnan().any():
-            print('predicted results are all negative!')
             continue
         else:
             max_masks_ious = torch.cat([max_masks_ious,torch.tensor([max_masks_iou],device=max_boxes_ious.device)],dim=0)

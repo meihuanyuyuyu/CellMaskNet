@@ -123,7 +123,7 @@ class BoxAndClassPredictor(nn.Module):
         return scores , bbox_deltas
 
 class MaskRCNN(nn.Module):
-    def __init__(self,default_anchors:Tensor,stage1_mode:bool,stage2_train_mode:bool,rpn_pos_threshold:float,backbone = Resnet50FPN(True),stage2_sample_ratio=1.5,post_rpn_thresh=0.7,stage2_max_proposal=256,post_detection_score_thresh = 0.5,post_detection_iou_thresh = 0.2,detections_per_img = 500,img_size = [256,256]) -> None:
+    def __init__(self,default_anchors:Tensor,stage1_mode:bool,stage2_train_mode:bool,rpn_pos_threshold:float,backbone = Resnet50FPN(False),stage2_sample_ratio=1.5,post_rpn_thresh=0.7,stage2_max_proposal=256,post_detection_score_thresh = 0.5,post_detection_iou_thresh = 0.2,detections_per_img = 500,img_size = [256,256]) -> None:
         super().__init__()
         self.stage1_mode = stage1_mode
         self.default_anchors = default_anchors
@@ -269,7 +269,7 @@ class MaskRCNN(nn.Module):
             if self.stage1_mode and self.stage2_train_mode:
                 rpn_loss =self.compute_rpn_loss(rpn_logist,rpn_reg,target_boxes)
                 losses.update(rpn_loss)
-                batched_rois,batched_scores = self.stage2_proposal_sample(batched_rois,batched_scores,target_boxes) #list[tensor]
+                batched_rois,batched_scores = self.stage2_proposal_sample(batched_rois,batched_scores,target_boxes,self.post_rpn_thresh) #list[tensor]
                 box_feature = self.box_align(stride8_feature,batched_rois)
                 box_feature =self.box_head(box_feature)
                 detection_cls,detection_reg =self.box_detection(box_feature)
