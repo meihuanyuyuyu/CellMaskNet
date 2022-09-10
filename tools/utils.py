@@ -1,3 +1,4 @@
+from cProfile import label
 from torch.nn.functional import interpolate
 import torch
 from typing import List
@@ -104,6 +105,26 @@ def rois2img(proposals,out_cls,out_masks):
             mask = interpolate(out_masks[num_box:num_box+1,None].float(),size=[h,w],mode='bilinear',align_corners=True).squeeze(0).squeeze(0)
             result[_,proposals[num_box,1]:proposals[num_box,1]+h,proposals[num_box,0]:proposals[num_box,0]+w] = result[_,proposals[num_box,1]:proposals[num_box,1]+h,proposals[num_box,0]:proposals[num_box,0]+w] + (mask.round().long() & (result[_,proposals[num_box,1]:proposals[num_box,1]+h,proposals[num_box,0]:proposals[num_box,0]+w]==False))* out_cls[num_box].item()
     return result.long()
+
+@torch.no_grad()
+def convert_prediction_to_numpy(proposals:Tensor,out_cls:Tensor,out_masks:Tensor):
+    label = torch.zeros(2,256,256,dtype=torch.float,device=proposals.device)
+    if 0 in proposals.shape:
+        return label.unsqueeze(0).cpu()
+    proposals = proposals.long()
+    proposals[:,2:] +=1
+    proposals =clip_boxes_to_image(proposals,[256,256])
+    for _,box in enumerate(proposals):
+        x = box[0].item() 
+        y = box[1].item()
+        w = (box[2] - box[0]).item()
+        h = (box[3] - box[1]).item()
+        mask = interpolate(out_masks[_:_+1,None].float(),size=[h,w],mode='bilinear',align_corners=True).squeeze(0).squeeze(0)
+        mask_pos = mask.round().long() & (label[1,y:y+h,x:x+w]==False)
+        label[1,y:y+h,x:x+w] = mask_pos * out_cls[_] + label[1,y:y+h,x:x+w]
+        label[0,y:y+h,x:x+w] = mask_pos * (_+1) + label[0,y:y+h,x:x+w]
+    return label.unsqueeze(0).cpu()
+
 
 ######################### Balanced_pos_neg_sample ###########################
 def balanced_pos_neg_sample(pos:Tensor,neg:Tensor,sample_ratio=0.3):
