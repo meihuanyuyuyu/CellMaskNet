@@ -64,18 +64,31 @@ for _ in range(arg.epoch):
         cls = [_.cuda() for _ in cls]
         loss = net(imgs,boxes,masks,cls)
         optimizer.zero_grad()
+        # fedral training:
+        if arg.stage1_mode and arg.stage2_train_mode:
+            if  loss['detection_loss'] is not None:
+                federal_loss=1.2*loss['detection_loss']+loss['rpn_loss']
+            else:
+                # stage1 predicts nothing
+                federal_loss=loss['rpn_loss']
+            federal_loss.backward()
+            optimizer.step()
+            lr_s.step()
+            if not federal_loss.isnan().any():
+                losses.append(federal_loss)
+            bar.set_description(f"stage2 train loss:{federal_loss.item()}")
 
-        if  loss['detection_loss'] is not None:
-            federal_loss=1.2*loss['detection_loss']+loss['rpn_loss']
-        else:
-            # stage1 predicts nothing
-            federal_loss=loss['rpn_loss']
-        federal_loss.backward()
-        optimizer.step()
-        lr_s.step()
-        if not federal_loss.isnan().any():
-            losses.append(federal_loss)
-        bar.set_description(f"stage2 train loss:{federal_loss.item()}")
+        # stage2 training:
+        if not arg.stage1_mode and arg.stage2_train_mode:
+            if loss['detection_loss'] is not None:
+                loss['detection_loss'].backward()
+                optimizer.step()
+                lr_s.step()
+            else:
+                continue
+            if not loss['detection_loss'].isnan().any():
+                losses.append(loss['detection_loss'])
+            bar.set_description(f"stage2 train loss:{loss['detection_loss'].item()}")
     write.add_scalar('train loss', torch.tensor(losses).mean().item(), _)
     torch.save(net.state_dict(),'model_parameters/maskrcnn_stage3.pt')
     torch.cuda.empty_cache()
@@ -97,7 +110,7 @@ for _ in range(arg.epoch):
                 cls = [_.cuda() for _ in cls]
                 rois,score,out_cls,out_masks=net(imgs)
                 ######## mask iou/boxes iou/category accurcay###################################################################
-                boxes_iou,masks_jaccard,categ_accuracy=proposal_stage2_metric(rois,out_masks,out_cls,boxes,masks,cls)
+                boxes_iou,masks_jaccard,categ_accuracy=proposal_stage2_metric(rois,out_masks,out_cls,boxes,masks,cls,arg.post_rpn_pos_thresh)
                 boxes_ious.append(boxes_iou)
                 masks_ious.append(masks_jaccard)
                 cls_acc.append(categ_accuracy)

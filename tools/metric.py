@@ -27,7 +27,7 @@ def stage1_val(boxes:List[torch.Tensor],preds:List[torch.Tensor],imgs:torch.Tens
     return proposal_targetboxes_miou(preds,boxes)
 
 @torch.no_grad()
-def proposal_stage2_metric(proposal: List[torch.Tensor],pred_masks,pred_clses, target_boxes: List[torch.Tensor], target_masks: List[torch.Tensor], target_cls: List[torch.Tensor]):
+def proposal_stage2_metric(proposal: List[torch.Tensor],pred_masks,pred_clses, target_boxes: List[torch.Tensor], target_masks: List[torch.Tensor], target_cls: List[torch.Tensor],iou_thresh:0.5):
     '每张图片boxes平均iou,正例类别标签中正确的占比,mask 平均iou'
     max_boxes_ious = torch.zeros(0,device='cuda')
     max_masks_ious = torch.zeros(0,device='cuda')
@@ -40,16 +40,20 @@ def proposal_stage2_metric(proposal: List[torch.Tensor],pred_masks,pred_clses, t
         max_iou,index = torch.max(iou, dim=-1)
         masks = masks[index]
         cls = cls[index]
+        pos_cls = max_iou >= iou_thresh
+        cls[torch.logical_not(pos_cls)] = 0
         max_masks_iou = jaccard(pred_mask,masks)
-        cls:torch.Tensor = (pred_cls[pred_cls.bool()]==cls[cls.bool()]).sum()/len(cls[cls.bool()])
-        
+        cls:torch.Tensor = (pred_cls==cls).sum()/len(cls)
         if cls.isnan().any() or max_iou.isnan().any():
             continue
         else:
             max_masks_ious = torch.cat([max_masks_ious,torch.tensor([max_masks_iou],device=max_boxes_ious.device)],dim=0)
             max_boxes_ious = torch.cat([max_boxes_ious,max_iou],dim=0)
             all_cls = torch.cat([all_cls,torch.tensor([cls.item()],device=all_cls.device)],dim=0)
-    return max_boxes_ious.mean().item(),max_masks_ious.mean().item(),all_cls.mean().item()
+    if 0 in max_boxes_ious.shape:
+        return 1.0,1.0,1.0
+    else:
+        return max_boxes_ious.mean().item(),max_masks_ious.mean().item(),all_cls.mean().item()
 
 def jaccard(masks:torch.Tensor,target_masks:torch.Tensor):
     TP = ((masks==1) & (target_masks==1)).sum()

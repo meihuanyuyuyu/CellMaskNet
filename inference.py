@@ -31,6 +31,8 @@ def get_final_metric():
     np.save(os.path.join(arg.numpy_dir,arg.__class__.__name__),preds)
     np.save(os.path.join(arg.numpy_dir,arg.__class__.__name__+'_gt'),_gts)
 
+
+print('starting inferencing!')
 get_final_metric()
 
     
