@@ -42,6 +42,7 @@ class Config3(Config2):
     rpn_pos_thresh= 0.6
     stage1_mode = True
     stage2_train_mode = True
+    stage2_sample_ratio = 1.5
 
 
 arg = Config3()
