@@ -90,7 +90,7 @@ for _ in range(arg.epoch):
                 losses.append(loss['detection_loss'])
             bar.set_description(f"stage2 train loss:{loss['detection_loss'].item()}")
     write.add_scalar('train loss', torch.tensor(losses).mean().item(), _)
-    torch.save(net.state_dict(),'model_parameters/maskrcnn_stage3.pt')
+    torch.save(net.state_dict(),arg.model_para)
     torch.cuda.empty_cache()
     
     if _% 10 ==0:

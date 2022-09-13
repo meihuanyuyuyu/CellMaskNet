@@ -189,6 +189,7 @@ class MaskRCNN(nn.Module):
         cls,reg,masks =generate_detection_targets(batched_rois,target_boxes,target_cls,target_masks,out_size=28,iou_thresh=self.post_rpn_thresh)
         if len(cls)!= 0:
             cls = torch.cat(cls,dim=0)
+            print('二阶段标签',torch.bincount(cls).tolist())
             reg = torch.cat(reg,dim=0)
             masks = torch.cat(masks,dim=0)
             loss = self.loss_cls_weight*F.cross_entropy(detection_box_cls,cls) + F.cross_entropy(detection_masks[cls!=0],masks[cls!=0]) + F.smooth_l1_loss(detection_box_reg[cls!=0],reg[cls!=0])
