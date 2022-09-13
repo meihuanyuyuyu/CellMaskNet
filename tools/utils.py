@@ -1,9 +1,11 @@
-from cProfile import label
-from torch.nn.functional import interpolate
+import torch.nn as nn
+from torch.nn.functional import interpolate,cross_entropy
 import torch
 from typing import List
 from torch import Tensor
 from torchvision.ops import box_convert,box_iou,clip_boxes_to_image,remove_small_boxes,nms
+
+from model.maskrcnn import forward
 
 def remove_big_boxes(boxes: Tensor, size: float) -> Tensor:
     #去除大框
@@ -212,9 +214,22 @@ def box2grid(rois_boxes:Tensor,output_size=[28,28]):
 
 
 
-# ******************************* model hook for stage1 boxes result ***************************
+# ******************************* proccess control ***************************
 
 
+# ******************************* loss function ***************************
 
+class FocalLoss(nn.Module):
+    def __init__(self,gama:float=2,weight=None,reduction:str='mean',label_smoothing:float=0.0) -> None:
+        self.gama = gama
+        self.reduction = reduction
+        self.label_smoothing = label_smoothing
+        self.weight = weight
+    
+    def forward(self,output:Tensor,targe:Tensor):
+        if self.reduction == 'mean':
+            return ((1-output.softmax(dim=1).max(dim=1).values) **self.gama * cross_entropy(output,target=targe,reduction='none',weight=self.weight,label_smoothing=self.label_smoothing)).mean()
 
-        
+def focal_loss(output:Tensor,target:Tensor,gama:float=2,weight=None,label_smoothing:float=0.0):
+    output =output.softmax(dim=1)
+    return ((1-output.softmax(dim=1).max(dim=1).values)** gama * cross_entropy(output,target=target,reduction='none',weight=weight,label_smoothing=label_smoothing)).mean()

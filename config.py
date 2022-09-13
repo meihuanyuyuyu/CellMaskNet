@@ -68,12 +68,12 @@ class Config5(Config4):
     stage2_sample_ratio = 3     
 
 class Config6(Config4):
-    stage2_sample_ratio = 1.5
+    stage2_sample_ratio = 2
     loss_cls_weight = 3
     model_para =      'model_parameters/maskrcnn_stage3_config6.pt'
-    load_model_para = 'model_parameters/maskrcnn_stage3_config5.pt'
+    load_model_para = 'model_parameters/maskrcnn_stage3.pt'
     val_img_fp =        'figures/maskrcnn_s3_config6'
     tensorboard_dir = 'exp_data/MaskRCNNStage3_config6'
-
+    
 
 arg = Config6()
