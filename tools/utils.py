@@ -5,7 +5,6 @@ from typing import List
 from torch import Tensor
 from torchvision.ops import box_convert,box_iou,clip_boxes_to_image,remove_small_boxes,nms
 
-from model.maskrcnn import forward
 
 def remove_big_boxes(boxes: Tensor, size: float) -> Tensor:
     #去除大框

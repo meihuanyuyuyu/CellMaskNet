@@ -68,7 +68,8 @@ class Config5(Config4):
     stage2_sample_ratio = 3     
 
 class Config6(Config4):
-    stage2_sample_ratio = 2
+    '二阶段使用focal loss,todo:(一阶段二分类使用标签平滑，防止模型过分自信)'
+    stage2_sample_ratio = 2.5
     loss_cls_weight = 3
     model_para =      'model_parameters/maskrcnn_stage3_config6.pt'
     load_model_para = 'model_parameters/maskrcnn_stage3.pt'
