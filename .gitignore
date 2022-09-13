@@ -5,3 +5,5 @@ exp_data/*
 *.out
 *.png
 *.txt
+numpy/prediction/*
+*.npy

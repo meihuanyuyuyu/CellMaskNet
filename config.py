@@ -34,15 +34,46 @@ class Config2(Config1):
     stage1_mode = False
     stage2_train_mode = True
 
-class Config3(Config2):
+class Config3(Config2): 
+    'pq       multi_pq+   0.443299    0.059354 '
     tensorboard_dir = 'exp_data/MaskRCNNStage3'
     model_para = 'model_parameters/maskrcnn_stage3.pt'
     load_model_para = 'model_parameters/maskrcnn_stage2.pt'
     val_img_fp = 'figures/maskrcnn_s3'
+    numpy_dir = 'numpy_prediction'
     rpn_pos_thresh= 0.6
+    post_rpn_pos_thresh = 0.7
     stage1_mode = True
     stage2_train_mode = True
-    stage2_sample_ratio = 1.5
+    stage2_sample_ratio = 3
 
+class Config4(Config3):
+    'config3训练分类坍缩,try:调整二阶段采样率，损失为分类增加权重'
+    stage2_sample_ratio = 2
+    loss_cls_weight = 1.5
+    lr = 1e-3
+    model_para = 'model_parameters/maskrcnn_stage3_config4.pt'
+    load_model_para = 'model_parameters/maskrcnn_stage3.pt'
+    val_img_fp = 'figures/maskrcnn_s3_config4'
+    tensorboard_dir = 'exp_data/MaskRCNNStage3_config4'
 
-arg = Config3()
+class Config5(Config4):
+    '固定住COnfig3中一阶段权重，进行单独二阶段训练'
+    stage1_mode = False
+    stage2_train_mode = True
+    model_para = 'model_parameters/maskrcnn_stage3_config5.pt'
+    load_model_para = 'model_parameters/maskrcnn_stage3.pt'
+    val_img_fp = 'figures/maskrcnn_s3_config5'
+    tensorboard_dir = 'exp_data/MaskRCNNStage3_config5'   
+    stage2_sample_ratio = 3     
+
+class Config6(Config4):
+    stage2_sample_ratio = 2
+    loss_cls_weight = 3
+    model_para =      'model_parameters/maskrcnn_stage3_config6.pt'
+    load_model_para = 'model_parameters/maskrcnn_stage3.pt'
+    val_img_fp =        'figures/maskrcnn_s3_config6'
+    tensorboard_dir = 'exp_data/MaskRCNNStage3_config6'
+    
+
+arg = Config6()

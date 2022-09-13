@@ -40,7 +40,7 @@ test_loader = DataLoader(test_set,2,shuffle=False,num_workers=4,collate_fn=colle
 
 ######## anchors ###############
 anchors = generate_anchors(anchors_wh,256,4).cuda()
-net = arg.model(anchors,stage1_mode=arg.stage1_mode,stage2_train_mode=arg.stage2_train_mode,rpn_pos_threshold=arg.rpn_pos_thresh,stage2_sample_ratio=arg.stage2_sample_ratio,post_rpn_thresh=arg.post_rpn_pos_thresh,post_detection_iou_thresh=arg.post_detection_nms_thresh,post_detection_score_thresh=arg.post_detection_score_thresh).cuda()
+net = arg.model(anchors,stage1_mode=arg.stage1_mode,stage2_train_mode=arg.stage2_train_mode,rpn_pos_threshold=arg.rpn_pos_thresh,stage2_sample_ratio=arg.stage2_sample_ratio,post_rpn_thresh=arg.post_rpn_pos_thresh,post_detection_iou_thresh=arg.post_detection_nms_thresh,post_detection_score_thresh=arg.post_detection_score_thresh,loss_cls_weight=arg.loss_cls_weight).cuda()
 net.load_state_dict(torch.load(arg.load_model_para))
 optimizer = AdamW(net.parameters(),lr=arg.lr,weight_decay=arg.weight_decay)
 lr_s = lr_scheduler.MultiStepLR(optimizer,arg.multi_steps,0.5)
@@ -64,18 +64,31 @@ for _ in range(arg.epoch):
         cls = [_.cuda() for _ in cls]
         loss = net(imgs,boxes,masks,cls)
         optimizer.zero_grad()
+        # fedral training:
+        if arg.stage1_mode and arg.stage2_train_mode:
+            if  loss['detection_loss'] is not None:
+                federal_loss=1.2*loss['detection_loss']+loss['rpn_loss']
+            else:
+                # stage1 predicts nothing
+                federal_loss=loss['rpn_loss']
+            federal_loss.backward()
+            optimizer.step()
+            lr_s.step()
+            if not federal_loss.isnan().any():
+                losses.append(federal_loss)
+            bar.set_description(f"stage2 train loss:{federal_loss.item()}")
 
-        if  loss['detection_loss'] is not None:
-            federal_loss=loss['detection_loss']+loss['rpn_loss']
-        else:
-            # stage1 predicts nothing
-            federal_loss=loss['rpn_loss']
-        federal_loss.backward()
-        optimizer.step()
-        lr_s.step()
-        if not federal_loss.isnan().any():
-            losses.append(federal_loss)
-        bar.set_description(f"stage2 train loss:{federal_loss.item()}")
+        # stage2 training:
+        if not arg.stage1_mode and arg.stage2_train_mode:
+            if loss['detection_loss'] is not None:
+                loss['detection_loss'].backward()
+                optimizer.step()
+                lr_s.step()
+            else:
+                continue
+            if not loss['detection_loss'].isnan().any():
+                losses.append(loss['detection_loss'])
+            bar.set_description(f"stage2 train loss:{loss['detection_loss'].item()}")
     write.add_scalar('train loss', torch.tensor(losses).mean().item(), _)
     torch.save(net.state_dict(),arg.model_para)
     torch.cuda.empty_cache()
@@ -97,7 +110,7 @@ for _ in range(arg.epoch):
                 cls = [_.cuda() for _ in cls]
                 rois,score,out_cls,out_masks=net(imgs)
                 ######## mask iou/boxes iou/category accurcay###################################################################
-                boxes_iou,masks_jaccard,categ_accuracy=proposal_stage2_metric(rois,out_masks,out_cls,boxes,masks,cls)
+                boxes_iou,masks_jaccard,categ_accuracy=proposal_stage2_metric(rois,out_masks,out_cls,boxes,masks,cls,arg.post_rpn_pos_thresh)
                 boxes_ious.append(boxes_iou)
                 masks_ious.append(masks_jaccard)
                 cls_acc.append(categ_accuracy)
@@ -110,9 +123,9 @@ for _ in range(arg.epoch):
                 target1 = torch.zeros_like(target)
                 target2 = torch.zeros_like(target)
                 # stage1 boxes predicted picture:
-                for _,(per_img,stage1_boxes,boxes) in enumerate(zip(target,stage1_rois,rois)):
-                    target1[_]=draw_bounding_boxes((per_img*255).to(dtype=torch.uint8),stage1_boxes)
-                    target2[_] = draw_bounding_boxes((per_img*255).to(dtype=torch.uint8),boxes)
+                for num,(per_img,stage1_boxes,boxes) in enumerate(zip(target,stage1_rois,rois)):
+                    target1[num]=draw_bounding_boxes((per_img*255).to(dtype=torch.uint8),stage1_boxes)
+                    target2[num] = draw_bounding_boxes((per_img*255).to(dtype=torch.uint8),boxes)
                 pic =make_grid(torch.cat([(target1/255).float(),(target2/255).float(),pic]),nrow=2,padding=4)
                 save_image(pic,os.path.join(arg.val_img_fp,f'{i}.png'))
             write.add_scalar('boxes miou', torch.tensor(boxes_ious).mean().item(), _)

@@ -1,8 +1,11 @@
-from torch.nn.functional import interpolate
+import torch.nn as nn
+from torch.nn.functional import interpolate,cross_entropy
 import torch
 from typing import List
 from torch import Tensor
 from torchvision.ops import box_convert,box_iou,clip_boxes_to_image,remove_small_boxes,nms
+
+from model.maskrcnn import forward
 
 def remove_big_boxes(boxes: Tensor, size: float) -> Tensor:
     #去除大框
@@ -105,6 +108,26 @@ def rois2img(proposals,out_cls,out_masks):
             result[_,proposals[num_box,1]:proposals[num_box,1]+h,proposals[num_box,0]:proposals[num_box,0]+w] = result[_,proposals[num_box,1]:proposals[num_box,1]+h,proposals[num_box,0]:proposals[num_box,0]+w] + (mask.round().long() & (result[_,proposals[num_box,1]:proposals[num_box,1]+h,proposals[num_box,0]:proposals[num_box,0]+w]==False))* out_cls[num_box].item()
     return result.long()
 
+@torch.no_grad()
+def convert_prediction_to_numpy(proposals:Tensor,out_cls:Tensor,out_masks:Tensor):
+    label = torch.zeros(2,256,256,dtype=torch.float,device=proposals.device)
+    if 0 in proposals.shape:
+        return label.unsqueeze(0).cpu()
+    proposals = proposals.long()
+    proposals[:,2:] +=1
+    proposals =clip_boxes_to_image(proposals,[256,256])
+    for _,box in enumerate(proposals):
+        x = box[0].item() 
+        y = box[1].item()
+        w = (box[2] - box[0]).item()
+        h = (box[3] - box[1]).item()
+        mask = interpolate(out_masks[_:_+1,None].float(),size=[h,w],mode='bilinear',align_corners=True).squeeze(0).squeeze(0)
+        mask_pos = mask.round().long() & (label[1,y:y+h,x:x+w]==False)
+        label[1,y:y+h,x:x+w] = mask_pos * out_cls[_] + label[1,y:y+h,x:x+w]
+        label[0,y:y+h,x:x+w] = mask_pos * (_+1) + label[0,y:y+h,x:x+w]
+    return label.unsqueeze(0).cpu()
+
+
 ######################### Balanced_pos_neg_sample ###########################
 def balanced_pos_neg_sample(pos:Tensor,neg:Tensor,sample_ratio=0.3):
     prob = pos.sum() / ( neg.sum() * sample_ratio)
@@ -191,9 +214,22 @@ def box2grid(rois_boxes:Tensor,output_size=[28,28]):
 
 
 
-# ******************************* model hook for stage1 boxes result ***************************
+# ******************************* proccess control ***************************
 
 
+# ******************************* loss function ***************************
 
+class FocalLoss(nn.Module):
+    def __init__(self,gama:float=2,weight=None,reduction:str='mean',label_smoothing:float=0.0) -> None:
+        self.gama = gama
+        self.reduction = reduction
+        self.label_smoothing = label_smoothing
+        self.weight = weight
+    
+    def forward(self,output:Tensor,targe:Tensor):
+        if self.reduction == 'mean':
+            return ((1-output.softmax(dim=1).max(dim=1).values) **self.gama * cross_entropy(output,target=targe,reduction='none',weight=self.weight,label_smoothing=self.label_smoothing)).mean()
 
-        
+def focal_loss(output:Tensor,target:Tensor,gama:float=2,weight=None,label_smoothing:float=0.0):
+    output =output.softmax(dim=1)
+    return ((1-output.softmax(dim=1).max(dim=1).values)** gama * cross_entropy(output,target=target,reduction='none',weight=weight,label_smoothing=label_smoothing)).mean()

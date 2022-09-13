@@ -6,8 +6,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import resnet50,resnet101,resnext101_64x4d
 from torchvision.ops import RoIAlign,box_iou,remove_small_boxes,nms,clip_boxes_to_image
-from tools.utils import proposal_layer,generate_rpn_targets,balanced_pos_neg_sample,generate_detection_targets,apply_box_delta, remove_big_boxes
-import time
+from tools.utils import proposal_layer,generate_rpn_targets,balanced_pos_neg_sample,generate_detection_targets,apply_box_delta, remove_big_boxes,focal_loss
+
 
 
 class conv_bn_activ(nn.Module):
@@ -123,7 +123,7 @@ class BoxAndClassPredictor(nn.Module):
         return scores , bbox_deltas
 
 class MaskRCNN(nn.Module):
-    def __init__(self,default_anchors:Tensor,stage1_mode:bool,stage2_train_mode:bool,rpn_pos_threshold:float,backbone = Resnet50FPN(True),stage2_sample_ratio=1.5,post_rpn_thresh=0.7,stage2_max_proposal=256,post_detection_score_thresh = 0.5,post_detection_iou_thresh = 0.2,detections_per_img = 500,img_size = [256,256]) -> None:
+    def __init__(self,default_anchors:Tensor,stage1_mode:bool,stage2_train_mode:bool,rpn_pos_threshold:float,backbone = Resnet50FPN(False),stage2_sample_ratio=1.5,post_rpn_thresh=0.7,stage2_max_proposal=256,post_detection_score_thresh = 0.5,post_detection_iou_thresh = 0.2,detections_per_img = 500,img_size = [256,256],loss_cls_weight:float=1.0) -> None:
         super().__init__()
         self.stage1_mode = stage1_mode
         self.default_anchors = default_anchors
@@ -155,6 +155,7 @@ class MaskRCNN(nn.Module):
         self.post_detection_iou_thresh = post_detection_iou_thresh
         self.detections_per_img = detections_per_img
         self.img_size = img_size
+        self.loss_cls_weight = loss_cls_weight
         
 
     def stage2_proposal_sample(self,batched_rois,batched_score,target_boxes,post_rpn_thresh:float=0.7):
@@ -188,9 +189,10 @@ class MaskRCNN(nn.Module):
         cls,reg,masks =generate_detection_targets(batched_rois,target_boxes,target_cls,target_masks,out_size=28,iou_thresh=self.post_rpn_thresh)
         if len(cls)!= 0:
             cls = torch.cat(cls,dim=0)
+            print('二阶段标签',torch.bincount(cls).tolist())
             reg = torch.cat(reg,dim=0)
             masks = torch.cat(masks,dim=0)
-            loss = F.cross_entropy(detection_box_cls,cls) + F.cross_entropy(detection_masks[cls!=0],masks[cls!=0]) + F.smooth_l1_loss(detection_box_reg[cls!=0],reg[cls!=0])
+            loss = self.loss_cls_weight*focal_loss(detection_box_cls,cls) + F.cross_entropy(detection_masks[cls!=0],masks[cls!=0]) + F.smooth_l1_loss(detection_box_reg[cls!=0],reg[cls!=0])
         else:
             loss = None
         return {'detection_loss':loss}
@@ -269,7 +271,7 @@ class MaskRCNN(nn.Module):
             if self.stage1_mode and self.stage2_train_mode:
                 rpn_loss =self.compute_rpn_loss(rpn_logist,rpn_reg,target_boxes)
                 losses.update(rpn_loss)
-                batched_rois,batched_scores = self.stage2_proposal_sample(batched_rois,batched_scores,target_boxes) #list[tensor]
+                batched_rois,batched_scores = self.stage2_proposal_sample(batched_rois,batched_scores,target_boxes,self.post_rpn_thresh) #list[tensor]
                 box_feature = self.box_align(stride8_feature,batched_rois)
                 box_feature =self.box_head(box_feature)
                 detection_cls,detection_reg =self.box_detection(box_feature)
