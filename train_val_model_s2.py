@@ -29,7 +29,7 @@ for _ in dir(arg):
 
 write= SummaryWriter(arg.tensorboard_dir)
 
-data = ConicDataset(transfs=[Random_flip(),My_colorjitter()])
+data = ConicDataset(transfs=[Random_flip(),My_colorjitter(0.1,0.1,0.1,0.1)])
 indexes = torch.load('train_test_indexes/splitted_indexes.pt')
 train_indexes = indexes['train']
 test_indexes=indexes['test']

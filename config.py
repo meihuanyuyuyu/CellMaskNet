@@ -75,6 +75,13 @@ class Config6(Config4):
     load_model_para = 'model_parameters/maskrcnn_stage3.pt'
     val_img_fp =        'figures/maskrcnn_s3_config6'
     tensorboard_dir = 'exp_data/MaskRCNNStage3_config6'
+    post_rpn_pos_thresh = 0.6
     
+
+class Config7(Config6):
+    r'仍预测一种类别，使用类别权重，并增加分类分支的模型复杂度'
+    stage2_sample_ratio = 2.5
+    weight = torch.tensor()
+
 
 arg = Config6()

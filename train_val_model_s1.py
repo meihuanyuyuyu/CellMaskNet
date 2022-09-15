@@ -25,7 +25,7 @@ def stage1_boxes_hook_for_val(moudle,input,output):
 
 write= SummaryWriter(arg.tensorboard_dir)
 
-data = ConicDataset(transfs=[Random_flip(),My_colorjitter()])
+data = ConicDataset(transfs=[Random_flip(),My_colorjitter(0.1,0.1,0.1,0.1)])
 indexes = torch.load('train_test_indexes/splitted_indexes.pt')
 test_indexes=indexes['test']
 train_indexes = indexes['train']
@@ -36,7 +36,8 @@ test_loader = DataLoader(test_set,2,shuffle=False,num_workers=4,collate_fn=colle
 
 ######## anchors ###############
 anchors = generate_anchors(anchors_wh,256,4).cuda()
-net = MaskRCNN(anchors,stage1_mode=True,rpn_pos_threshold=0.7).cuda()
+net = arg.model(anchors,stage1_mode=arg.stage1_mode,stage2_train_mode=arg.stage2_train_mode,rpn_pos_threshold=arg.rpn_pos_thresh,stage2_sample_ratio=arg.stage2_sample_ratio,post_rpn_thresh=arg.post_rpn_pos_thresh,post_detection_iou_thresh=arg.post_detection_nms_thresh,post_detection_score_thresh=arg.post_detection_score_thresh,loss_cls_weight=arg.loss_cls_weight).cuda()
+net.load_state_dict(torch.load(arg.load_model_para))
 optimizer = AdamW(net.parameters(),lr=arg.lr,weight_decay=arg.weight_decay)
 lr_s = lr_scheduler.MultiStepLR(optimizer,arg.multi_steps,0.5)
 
