@@ -4,7 +4,7 @@ from torch.nn.functional import cross_entropy, smooth_l1_loss, binary_cross_entr
 import torch
 from torchvision.utils import save_image
 from model.maskrcnn import MaskRCNN
-from config import arg,anchors_wh
+from Config.maskrcnn_config import arg,anchors_wh
 from tools.utils import generate_anchors
 from tools.augmentation import My_colorjitter,Random_flip
 from tools.dataset import ConicDataset,DataLoader,Subset,collect_fn

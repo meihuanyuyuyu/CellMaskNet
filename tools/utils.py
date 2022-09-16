@@ -231,3 +231,8 @@ class FocalLoss(nn.Module):
 
 def focal_loss(output:Tensor,target:Tensor,gama:float=2,weight=None,label_smoothing:float=0.0):
     return ((1-output.softmax(dim=1).max(dim=1).values)** gama * cross_entropy(output,target=target,reduction='none',weight=weight,label_smoothing=label_smoothing)).mean()
+
+
+
+def hovernet_postprocess():
+    pass 

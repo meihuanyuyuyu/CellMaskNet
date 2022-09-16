@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from model.maskrcnn import MaskRCNN
-from config import arg,anchors_wh
+from Config.maskrcnn_config import arg,anchors_wh
 from tools.utils import generate_anchors, rois2img,convert_prediction_to_numpy
 import os
 from tqdm import tqdm

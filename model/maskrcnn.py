@@ -4,7 +4,7 @@ from torch import Tensor
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.models import resnet50,resnet101,resnext101_64x4d
+from torchvision.models import resnet50,resnet101,resnext101_64x4d,resnext50_32x4d,ResNeXt50_32X4D_Weights,ResNet50_Weights
 from torchvision.ops import RoIAlign,box_iou,remove_small_boxes,nms,clip_boxes_to_image
 from tools.utils import proposal_layer,generate_rpn_targets,balanced_pos_neg_sample,generate_detection_targets,apply_box_delta, remove_big_boxes,focal_loss
 

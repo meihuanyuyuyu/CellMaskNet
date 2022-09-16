@@ -2,7 +2,7 @@ from model.maskrcnn import MaskRCNN
 from tools.dataset import ConicDataset
 import torch
 from torch.nn.functional import interpolate
-from config import anchors_wh
+from Config.maskrcnn_config import anchors_wh
 from tools.utils import generate_detection_targets,generate_anchors,proposal_layer,anchors_to_max_boxes_delta,apply_box_delta, rois2img
 from torchvision.ops import roi_align,remove_small_boxes,clip_boxes_to_image
 from torchvision.utils import draw_bounding_boxes,save_image

@@ -5,7 +5,9 @@ import torchvision.transforms.functional as TF
 import torch
 from torch.nn.functional import grid_sample
 from PIL import Image
-from torchvision.transforms.transforms import CenterCrop, ColorJitter, ToTensor
+from torchvision.transforms.transforms import CenterCrop, ColorJitter, ToTensor,GaussianBlur
+
+from model.maskrcnn import forward
 
 
 class Random_crop():
@@ -194,3 +196,10 @@ class To_Tensor(ToTensor):
 
     def __call__(self, *args):
         return [super(To_Tensor, self).__call__(_) for _ in args]
+
+class MyGausssianBlur(GaussianBlur):
+    def __init__(self, kernel_size, sigma=...):
+        super().__init__(kernel_size, sigma)
+    
+    def forward(*args):
+        return [super().forward(args[idx]) if idx==0 else args[idx] for idx in range(len(args))]

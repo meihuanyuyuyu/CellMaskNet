@@ -6,6 +6,7 @@ import numpy as np
 from torch.utils.data import Dataset,Subset,DataLoader
 from tools.utils import box2grid, remove_big_boxes
 from torchvision.transforms.functional import crop
+from scipy.ndimage import center_of_mass
 
 
 
@@ -60,3 +61,49 @@ class ConicDataset(Dataset):
     
 def collect_fn(data):
     return [torch.stack(sub_data,dim=0) if _== 0 or _==1 else list(sub_data) for _,sub_data in enumerate(zip(*data))] 
+
+
+class HoverNetCoNIC(Dataset):
+    def __init__(self,img_size:list,transf:list) -> None:
+        super().__init__()
+        self.grid_x,self.grid_y = torch.meshgrid(torch.arange(img_size[0]), torch.arange(img_size[1]), indexing='xy')
+        self.transf = transf
+        print('Loading data into memory')
+        self.imgs = torch.from_numpy(np.load('project_conic/CoNIC_Challenge/images.npy').astype(np.float64)/255).float().permute(0,3,1,2).contiguous()
+        self.labels = torch.from_numpy(np.load('project_conic/CoNIC_Challenge/labels.npy').astype(np.float64)).long().permute(0,3,1,2).contiguous()
+        print('Finishing loading data')
+        
+
+    def transforms(self,imgs,labels):
+        for _ in self.transfs:
+            imgs,labels = _(imgs,labels)
+            return imgs,labels
+    
+    def hv_label_generator(self,label:torch.Tensor):
+        'label:2,h,w'
+        hv = torch.zeros_like(label,dtype=torch.float32)
+        instance_map = label[0]
+        for idx in range(1,instance_map.max()+1):
+            mask = instance_map==idx
+            mask_np = mask.numpy()
+            center_y,center_x = center_of_mass(mask_np)
+            x = self.grid_x[mask]-center_x
+            x[x<0] = x[x<0]/ x.min()
+            x[x>0] = x[x>0]/ x.max()
+            hv[0,mask] = x
+
+            y = self.grid_y[mask]- center_y
+            y[y<0] = y[y<0]/ y.min()
+            y[y>0] = y[y>0]/ y.max()
+            hv[1,mask] = y
+        return hv
+    
+    def __getitem__(self, index):
+        label = self.labels[index]
+        img = self.imgs[index]
+        if len(self.transf) !=0:
+            img,label=self.transforms(img,label)
+        hv =self.hv_label_generator(label)
+        np = label[0].bool().long()
+        nc = label[1]
+        return img,hv,np,nc

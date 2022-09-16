@@ -3,7 +3,7 @@ from torch.optim import AdamW, lr_scheduler
 import torch
 from torchvision.utils import save_image,draw_bounding_boxes,make_grid
 from model.maskrcnn import MaskRCNN
-from config import arg,anchors_wh,color
+from Config.maskrcnn_config import arg,anchors_wh,color
 from tools.utils import generate_anchors,rois2img
 from tools.augmentation import My_colorjitter,Random_flip
 from tools.dataset import ConicDataset,DataLoader,Subset,collect_fn
