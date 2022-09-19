@@ -60,3 +60,5 @@ def jaccard(masks:torch.Tensor,target_masks:torch.Tensor):
     FP_FN = torch.ne(masks,target_masks).sum()
     return (TP/(TP+FP_FN)).item()
 
+def mask_category_acc(out:torch.Tensor,target_masks:torch.Tensor):
+    return (out[target_masks!=0]==target_masks[target_masks!=0]).float().mean().item()
