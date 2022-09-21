@@ -66,7 +66,7 @@ class Training_process:
         if process_arg.stage_mode ==1:
             self.net.backbone.requires_grad_(False)
         else:
-            self.net.backbone.load_state_dict(torch.load(arg.model_para))
+            self.net.load_state_dict(torch.load(arg.model_para))
         
 
     def generating_data(self):

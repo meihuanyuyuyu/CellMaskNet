@@ -1,9 +1,11 @@
 import torch.nn as nn
-from torch.nn.functional import interpolate,cross_entropy
+from torch.nn.functional import interpolate,cross_entropy,one_hot
 import torch
 from typing import List
 from torch import Tensor
 from torchvision.ops import box_convert,box_iou,clip_boxes_to_image,remove_small_boxes,nms
+from torchvision.utils import draw_segmentation_masks,save_image,make_grid
+import numpy as np
 
 
 def remove_big_boxes(boxes: Tensor, size: float) -> Tensor:
@@ -213,7 +215,22 @@ def box2grid(rois_boxes:Tensor,output_size=[28,28]):
 
 
 
-# ******************************* proccess control ***************************
+# ******************************* draw utils ***************************
+
+def draw_instance_map(imgs,preds,test_index,fp):
+    r'give predicted numpy results (n,h,w,2) and return saved imgs'
+    imgs = torch.from_numpy(imgs.astype(np.float64)/255).float().permute(0,3,1,2).contiguous()
+    preds = torch.from_numpy(preds.astype(np.float64)).long().permute(0,3,1,2).contiguous()
+    color = torch.tensor([[0,0,0],[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1]],dtype=torch.float32)
+    for _,idx in enumerate(test_index):
+        img = (imgs[idx]*255).to(dtype=torch.uint8)
+        mask_map = preds[_,1]
+        ins_map = preds[_,0]
+        mask =color[mask_map].permute(2,0,1)
+        ins_map = one_hot(ins_map,num_classes=ins_map.max()+1).permute(2,0,1)[1:].bool()
+        ins = draw_segmentation_masks(img,ins_map,alpha=0.7)/255
+        save_image(ins,fp+f'/{_}ins.png')
+        save_image(mask,fp+f'{_}cls.png')
 
 
 # ******************************* loss function ***************************
