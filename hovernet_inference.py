@@ -2,20 +2,24 @@ import torch
 from model.HoverNet import HoverNet,proc_np_hv
 from Config.hovernet_config import arg
 
+
 class HovernetInfer:
     def __init__(self,device,dataset) -> None:
         self.net = HoverNet(arg.num_classes)
-        self.net.load_state_dict(torch.load(arg.model_para))
+        self.net.load_state_dict(torch.load(arg.model_para,map_location=device))
         self.net.eval()
         self.net.to(device=device)
         self.dataset = dataset
+        self.arg = arg
+        self.device = device
 
+    @torch.no_grad()
     def __call__(self,img:torch.Tensor):
+        img = img.to(device=self.device)
         if self.dataset == 'conic':
             predict:dict =self.net(img)
             tp,_np,hv = predict.values()
-            hv = hv.unsqueeze(0)
-            _np = _np.softmax(dim=1).max(dim=1).values.unsqueeze(0)
+            _np = _np.softmax(dim=1).max(dim=1).values
             tp = tp.argmax(dim=1).unsqueeze(0)
             pred = torch.stack([_np,*hv.unbind(dim=1)],dim=-1).cpu()
             proc_pred =torch.from_numpy(proc_np_hv(pred))

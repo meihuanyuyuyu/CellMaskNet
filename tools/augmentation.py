@@ -175,7 +175,7 @@ class To_Tensor(ToTensor):
         return [super(To_Tensor,self).__call__(_) for _ in args]
 
 class MyGausssianBlur(GaussianBlur):
-    def __init__(self, kernel_size, sigma=...):
+    def __init__(self, kernel_size=3 , sigma=...):
         super().__init__(kernel_size, sigma)
     
     def forward(*args):

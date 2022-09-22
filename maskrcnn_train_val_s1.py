@@ -6,7 +6,7 @@ from torchvision.utils import save_image
 from model.maskrcnn import MaskRCNN
 from Config.maskrcnn_config import arg,anchors_wh
 from tools.utils import generate_anchors
-from tools.augmentation import My_colorjitter,Random_flip
+from tools.augmentation import My_colorjitter, MyGausssianBlur,Random_flip
 from tools.dataset import ConicDataset,DataLoader,Subset,collect_fn
 from tools.metric import stage1_val
 from tqdm import tqdm
@@ -25,7 +25,7 @@ def stage1_boxes_hook_for_val(moudle,input,output):
 
 write= SummaryWriter(arg.tensorboard_dir)
 
-data = ConicDataset(transfs=[Random_flip(),My_colorjitter(0.1,0.1,0.1,0.1)])
+data = ConicDataset(transfs=[Random_flip(),MyGausssianBlur(3,[0.3,0.6]),My_colorjitter(0.1,0.1,0.1,0.1)])
 indexes = torch.load('train_test_indexes/splitted_indexes.pt')
 test_indexes=indexes['test']
 train_indexes = indexes['train']

@@ -10,6 +10,7 @@ class Config:
     batch = 2
     model = HoverNet
     epoch = 50
+    numpy_dir = 'numpy_prediction'
     
     def __init__(self) -> None:
         self.log_dir =f'log/{self.__class__.__name__}.log'

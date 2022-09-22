@@ -4,7 +4,7 @@ import numpy as np
 from model.maskrcnn import MaskRCNN
 #from Config.maskrcnn_config import arg,anchors_wh
 from tools.utils import draw_instance_map,convert_prediction_to_numpy
-import os
+import os                 
 from project_conic.rules.compute_pq_mpq import compute_pq_mpq
 from tqdm import tqdm
 import argparse
@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser(description='infering')
 parser.add_argument('--model',type=str,default='cellmasknet')
 parser.add_argument('--device',type=str,default='cuda')
 parser.add_argument('--dataset',type=str,default='conic')
-parser.add_argument('results_dir',type=str,default='figures/results/hovernet')
+parser.add_argument('--results_dir',type=str,default='figures/results/hovernet')
 process_arg = parser.parse_args()
 
 '''@torch.no_grad()
@@ -42,10 +42,9 @@ def get_final_metric():
     np.save(os.path.join(arg.numpy_dir,arg.__class__.__name__+'_gt'),_gts)'''
 
 
-print('starting inferencing!')
 class InferEngine:
     def __init__(self) -> None:
-
+        print('initlizing model...')
         if process_arg.model == 'hovernet':
             from hovernet_inference import HovernetInfer
             self.infer = HovernetInfer(process_arg.device,process_arg.dataset)
@@ -69,7 +68,7 @@ class InferEngine:
             img = data[idx:idx+1]
             gt = gts[idx:idx+1]
             pred =self.infer(img)
-            preds = torch.cat([preds,pred.unsqueeze(0)],dim=0)
+            preds = torch.cat([preds,pred],dim=0)
             _gts = np.concatenate((_gts,gt),axis=0)
         preds = preds.permute(0,2,3,1).numpy().astype(np.uint16)
         return preds,_gts
@@ -78,8 +77,8 @@ class InferEngine:
     def run(self):
         data,gts,index = self.prepare_data()
         preds,_gts=self.generate_results(data,gts,index)
-        pred_path = os.path.join(self.arg.numpy_dir,self.arg.__class__.__name__)
-        true_path = pred_path+'_gt'
+        pred_path = os.path.join(self.infer.arg.numpy_dir,self.infer.arg.__class__.__name__)+'.npy'
+        true_path = pred_path+'_gt.npy'
         draw_instance_map(data,preds,index,process_arg.results_dir)
         np.save(pred_path,preds)
         np.save(true_path,_gts)

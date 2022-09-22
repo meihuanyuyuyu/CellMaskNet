@@ -116,3 +116,6 @@ def get_bounding_box(img):
     rmax += 1
     cmax += 1
     return [rmin, rmax, cmin, cmax]
+
+
+

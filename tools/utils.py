@@ -219,7 +219,6 @@ def box2grid(rois_boxes:Tensor,output_size=[28,28]):
 
 def draw_instance_map(imgs,preds,test_index,fp):
     r'give predicted numpy results (n,h,w,2) and return saved imgs'
-    imgs = torch.from_numpy(imgs.astype(np.float64)/255).float().permute(0,3,1,2).contiguous()
     preds = torch.from_numpy(preds.astype(np.float64)).long().permute(0,3,1,2).contiguous()
     color = torch.tensor([[0,0,0],[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1]],dtype=torch.float32)
     for _,idx in enumerate(test_index):

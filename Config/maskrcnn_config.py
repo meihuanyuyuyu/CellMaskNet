@@ -78,8 +78,10 @@ class Config6(Config4):
     post_rpn_pos_thresh = 0.6
     
 
-class Config7(Config6):
-    r'仍预测一种类别，使用类别权重，并增加分类分支的模型复杂度'
+class Config7(Config2):
+    r''
+    
+    
 
 
 arg = Config6()

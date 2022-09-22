@@ -292,7 +292,8 @@ class MaskRCNN(nn.Module):
             batched_rois,batched_scores,cls,masks =self.postprocess_detection(detection_cls,detection_reg,detection_masks,batched_rois)
 
             return batched_rois,batched_scores,cls,masks
-            
+
+
             
             
             
