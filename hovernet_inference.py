@@ -19,14 +19,16 @@ class HovernetInfer:
         if self.dataset == 'conic':
             predict:dict =self.net(img)
             tp,_np,hv = predict.values()
-            _np = _np.softmax(dim=1).max(dim=1).values
-            tp = tp.argmax(dim=1).unsqueeze(0)
-            pred = torch.stack([_np,*hv.unbind(dim=1)],dim=-1).cpu()
+            _np = _np.argmax(dim=1)
+            tp = tp.argmax(dim=1).squeeze(0)
+            pred = torch.stack([_np,*hv.unbind(dim=1)],dim=-1).cpu().squeeze(0)
             proc_pred =torch.from_numpy(proc_np_hv(pred))
             pred = torch.zeros(2, *arg.img_size).long()
             pred[0] = proc_pred
             for idx in range(1, proc_pred.max() + 1):
                 mask = proc_pred == idx
+                if mask.sum()==0:
+                    continue
                 cls = tp[mask].mode().values
                 if cls == 0:
                     pred[0][mask] = 0

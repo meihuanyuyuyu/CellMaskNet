@@ -229,7 +229,7 @@ def draw_instance_map(imgs,preds,test_index,fp):
         ins_map = one_hot(ins_map,num_classes=ins_map.max()+1).permute(2,0,1)[1:].bool()
         ins = draw_segmentation_masks(img,ins_map,alpha=0.7)/255
         save_image(ins,fp+f'/{_}ins.png')
-        save_image(mask,fp+f'{_}cls.png')
+        save_image(mask,fp+f'/{_}cls.png')
 
 
 # ******************************* loss function ***************************

@@ -26,4 +26,4 @@ class AdaptiveFeaturePooling(nn.Module):
 class CellMaskNet(MaskRCNN):
     def __init__(self, default_anchors: torch.Tensor, stage1_mode: bool, stage2_train_mode: bool, rpn_pos_threshold: float, backbone=..., stage2_sample_ratio=1.5, post_rpn_thresh=0.7, stage2_max_proposal=256, post_detection_score_thresh=0.5, post_detection_iou_thresh=0.2, detections_per_img=500, img_size=...) -> None:
         super().__init__(default_anchors, stage1_mode, stage2_train_mode, rpn_pos_threshold, backbone, stage2_sample_ratio, post_rpn_thresh, stage2_max_proposal, post_detection_score_thresh, post_detection_iou_thresh, detections_per_img, img_size)
-        pass
+        

@@ -87,13 +87,14 @@ class HoverNetCoNIC(Dataset):
             mask = instance_map==idx
             mask_np = mask.numpy()
             center_y,center_x = center_of_mass(mask_np)
+            #center_x,center_y = torch.from_numpy(center_x),torch.from_numpy(center_y)
             x = self.grid_x[mask]-center_x
-            x[x<0] = x[x<0]/ x.min()
+            x[x<0] = x[x<0]/ x.min().abs()
             x[x>0] = x[x>0]/ x.max()
             hv[0,mask] = x
 
             y = self.grid_y[mask]- center_y
-            y[y<0] = y[y<0]/ y.min()
+            y[y<0] = y[y<0]/ y.min().abs()
             y[y>0] = y[y>0]/ y.max()
             hv[1,mask] = y
         return hv

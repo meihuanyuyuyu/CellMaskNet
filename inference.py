@@ -58,7 +58,7 @@ class InferEngine:
         if process_arg.dataset == 'conic':
             data = torch.from_numpy(np.load('project_conic/CoNIC_Challenge/images.npy').astype(np.float64)/255).float().permute(0,3,1,2).contiguous()
             gts = np.load('project_conic/CoNIC_Challenge/labels.npy')
-            index =  torch.load('train_test_indexes/splitted_indexes.pt')['test']
+            index =  torch.load('train_test_indexes/conic_trian_test_val_indexes.pt')['test']
             return data,gts,index
 
     def generate_results(self,data:torch.Tensor,gts,index:list):

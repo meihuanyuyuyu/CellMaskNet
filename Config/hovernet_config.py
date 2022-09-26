@@ -2,10 +2,14 @@ from model.HoverNet import HoverNet
 import os
 
 class Config:
+    '''
+    pq  multi_pq+
+0.511989   0.436149
+    '''
     img_size = [256,256]
     num_classes = 7
     lr = 1e-4
-    lr_s = [25]
+    lr_s = [15,25,35]
     weight_decay = 1e-4
     batch = 2
     model = HoverNet

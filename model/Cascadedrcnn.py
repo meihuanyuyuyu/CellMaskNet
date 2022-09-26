@@ -10,7 +10,7 @@ class CascadedRCNN(MaskRCNN):
         self.post_rpn_thresh = [0.5,0.6,0.7]
         self.box_head = [BoxHead(256,1024) for _ in range(3)]
         self.box_detection = [BoxAndClassPredictor(1024, 7) for _ in range(3)]
-
+        
 
 
     def compute_detection_loss(self, batched_rois, detection_box_cls, detection_box_reg, detection_masks, target_boxes, target_cls, target_masks,detection_stage:int=0):

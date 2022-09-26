@@ -1,4 +1,4 @@
-from model.maskrcnn import MaskRCNN
+'''from model.maskrcnn import MaskRCNN
 from tools.dataset import ConicDataset
 import torch
 from torch.nn.functional import interpolate
@@ -69,7 +69,7 @@ for i,idx in enumerate(idxs):
     pic3 = torch.cat([pic3,color[data.labels[idx][1:2]].permute(0,3,1,2)],dim=0).cpu()
     pic = torch.cat([pic0[None],pic1[None],pic2[None],pic3])
     save_image(pic,f'test/test2/{i}.png')
-
+'''
 
 '''
 idxs = [1819,210,87,29,28,26,94]
@@ -99,3 +99,10 @@ for i,idx in enumerate(idxs):
     pic = torch.cat([pic,color[data.labels[idx][1:2]].permute(0,3,1,2)],dim=0)
     save_image(pic,fp=f'test/test1/{i}.png')'''
 
+
+import torch
+
+
+
+a = torch.ones(2,3)
+print(a.ndimension())

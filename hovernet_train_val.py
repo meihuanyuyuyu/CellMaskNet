@@ -1,5 +1,4 @@
 
-
 from torch.utils.tensorboard import SummaryWriter
 from Config.hovernet_config import arg
 import argparse
@@ -43,17 +42,28 @@ def train_hovernet(data:DataLoader,optimizer:Optimizer,model:torch.nn.Module,lr_
     return torch.tensor(losses).mean().item()
 
     
-
-def val_hovernet(data:DataLoader,optimizer:Optimizer,model:torch.nn.Module):
+@torch.no_grad()
+def val_hovernet(data:DataLoader,model:torch.nn.Module):
     model.eval()
     bar = tqdm(data,colour='red')
+    ious = []
+    acces = []
     for data in bar:
         img,hv,np,tp = data
+        img = img.to(device=process_arg.device)
         hv = hv.to(device=process_arg.device)
         np = np.to(device=process_arg.device)
         tp =  tp.to(device=process_arg.device)
-        out_dict =model(img)
-        plt.imshow()
+        out_dict:dict =model(img)
+        pred_tp,pred_np,pred_hv = out_dict.values()
+        iou = jaccard(pred_np.argmax(1),np)
+        acc = mask_category_acc(pred_tp.argmax(1),tp)
+        ious.append(iou)
+        acces.append(acc)
+        bar.set_description(f'masks iou:{iou:.4f},category acc:{acc:.4f}')
+    
+    return torch.tensor(ious).mean().item(),torch.tensor(acces).mean().item()
+        
 
 
     
@@ -62,7 +72,7 @@ class Training_process:
     def __init__(self) -> None:
         self.net = arg.model(arg.num_classes).to(device=process_arg.device)
         self.optimizer = Adam(self.net.parameters(),lr=arg.lr,weight_decay=arg.weight_decay)
-        self.lrs = MultiStepLR(self.optimizer,[25],gamma=0.1)
+        self.lrs = MultiStepLR(self.optimizer,arg.lr_s,gamma=0.1)
         if process_arg.stage_mode ==1:
             self.net.backbone.requires_grad_(False)
         else:
@@ -70,22 +80,29 @@ class Training_process:
         
 
     def generating_data(self):
-        data_set = HoverNetCoNIC(img_size=arg.img_size,transf=[Random_flip(),MyGausssianBlur(3,(0.2,0.5)),ColorJitter(0.1,0.1,0.1,0.1)])
-        indexes = torch.load('train_test_indexes/splitted_indexes.pt')
-        train_indexes,test_indexes = indexes['train'],indexes['test']
+        data_set = HoverNetCoNIC(img_size=arg.img_size,transf=[Random_flip(),MyGausssianBlur(3,(0.2,0.7)),ColorJitter(0.1,0.1,0.1,0.1)])
+        indexes = torch.load('train_test_indexes/conic_trian_test_val_indexes.pt')
+        train_indexes,test_indexes = indexes['train'],indexes['val']
         train_set=Subset(data_set,train_indexes)
         test_set = Subset(data_set,test_indexes)
-        train_data = DataLoader(train_set,batch_size=arg.batch,shuffle=True,num_workers=4)
-        test_data = DataLoader(test_set,batch_size=arg.batch,shuffle=False,num_workers=4)
+        train_data = DataLoader(train_set,batch_size=arg.batch,shuffle=True,num_workers=8)
+        test_data = DataLoader(test_set,batch_size=arg.batch,shuffle=False,num_workers=8)
         setattr(self,'train_data',train_data)
         setattr(self,'test_data',test_data)
     
     def run(self):
+        max_iou,max_acc= 0,0
         for _ in range(arg.epoch):
             losses=train_hovernet(self.train_data,optimizer=self.optimizer,model=self.net,lr_s=self.lrs)
-            writer.add_scalar('train loss', losses, _)
-            torch.save(self.net.state_dict(),arg.model_para)
             torch.cuda.empty_cache()
+            writer.add_scalar('train loss', losses, _)
+            if _ %10 == 4:
+                ious,acces =val_hovernet(self.test_data,self.net)
+                writer.add_scalar('val ious',ious,_)
+                writer.add_scalar('val category acc',acces,_)
+                if (max_iou:=max(max_iou,ious))==ious or (max_acc:= max(max_acc,acces))==acces:
+                    torch.save(self.net.state_dict(),arg.model_para)
+
 
 
 if __name__=='__main__':
